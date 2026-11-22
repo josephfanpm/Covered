@@ -2,10 +2,10 @@ import { CircleCheck, CircleX, MessageSquareText, PhoneCall } from 'lucide-react
 import type { Tone } from '@/lib/view'
 
 const STYLE: Record<Tone, { icon: typeof CircleCheck; className: string }> = {
-  working: { icon: MessageSquareText, className: 'text-spruce-700' },
-  urgent: { icon: PhoneCall, className: 'text-marigold-600' },
-  good: { icon: CircleCheck, className: 'text-moss-600' },
-  bad: { icon: CircleX, className: 'text-brick-600' },
+  working: { icon: MessageSquareText, className: 'text-brand-700' },
+  urgent: { icon: PhoneCall, className: 'text-urgent-600' },
+  good: { icon: CircleCheck, className: 'text-good-600' },
+  bad: { icon: CircleX, className: 'text-bad-600' },
 }
 
 /** Status as an icon plus words, never colour alone. */

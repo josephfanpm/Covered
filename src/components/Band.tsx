@@ -17,14 +17,14 @@ export function Band({ sim }: { sim: Sim }) {
   const [shader] = useState(shaderAllowed)
 
   return (
-    <header className="relative isolate overflow-hidden bg-spruce-800 text-white">
+    <header className="relative isolate overflow-hidden bg-brand-800 text-white">
       {/* Static dawn: the fallback, and the whole picture under reduced motion. */}
       <div
         aria-hidden
         className="absolute inset-0 -z-20"
         style={{
           background:
-            'radial-gradient(120% 90% at 85% 115%, #f5b82e 0%, #ba8117 14%, #1e5a5f 46%, #00282e 78%)',
+            'radial-gradient(120% 90% at 85% 115%, #fc8c3a 0%, #d47329 12%, #33a4d6 44%, #002447 80%)',
         }}
       />
       {shader && (
@@ -35,15 +35,15 @@ export function Band({ sim }: { sim: Sim }) {
         </div>
       )}
       {/* Keeps text readable whatever the sky is doing. */}
-      <div aria-hidden className="absolute inset-0 -z-10 bg-linear-to-r from-spruce-800/85 via-spruce-800/55 to-transparent" />
+      <div aria-hidden className="absolute inset-0 -z-10 bg-linear-to-r from-brand-800/90 via-brand-800/75 to-brand-800/50 sm:from-brand-800/85 sm:via-brand-800/55 sm:to-transparent" />
 
       <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 pt-4 sm:px-8">
         <div className="flex items-baseline gap-3">
           <span className="text-xl font-extrabold tracking-tight">Covered</span>
-          <span className="text-sm text-spruce-200">{AGENCY}</span>
+          <span className="text-sm text-brand-200">{AGENCY}</span>
         </div>
 
-        <div className="flex items-center gap-2 rounded-xl bg-spruce-800/80 py-1 pr-1 pl-3">
+        <div className="flex items-center gap-2 rounded-xl bg-brand-800/80 py-1 pr-1 pl-3">
           <span className="tabular mr-1 text-lg font-semibold" aria-label="Simulated time">
             {formatClock(sim.sim.now)}
           </span>
@@ -72,7 +72,7 @@ export function Band({ sim }: { sim: Sim }) {
                     type="button"
                     onClick={() => sim.setSpeed(s)}
                     aria-pressed={sim.speed === s}
-                    className="tabular h-9 min-w-11 rounded-md px-2 text-sm font-semibold aria-pressed:bg-white aria-pressed:text-spruce-800"
+                    className="tabular h-9 min-w-11 rounded-md px-2 text-sm font-semibold aria-pressed:bg-white aria-pressed:text-brand-800"
                   >
                     {s}×
                   </button>
@@ -87,7 +87,7 @@ export function Band({ sim }: { sim: Sim }) {
         <h1 className="max-w-[18ch] text-[2.1rem] leading-[1.05] font-extrabold tracking-tight text-balance sm:text-[3.4rem]">
           Every open visit, covered before it starts.
         </h1>
-        <p className="mt-4 max-w-[52ch] text-base text-spruce-100 sm:text-lg">
+        <p className="mt-4 max-w-[52ch] text-base text-brand-100 sm:text-lg">
           When a caregiver calls out, Covered ranks your own team, texts the offer in order, and widens the search as the
           visit gets closer.
         </p>
@@ -96,11 +96,11 @@ export function Band({ sim }: { sim: Sim }) {
             type="button"
             onClick={sim.simulateCallOut}
             disabled={!sim.canCallOut}
-            className="inline-flex h-12 items-center gap-2 rounded-lg bg-marigold-300 px-5 text-base font-bold text-spruce-800 shadow-[0_2px_0_0_var(--marigold-600)] transition-transform hover:bg-marigold-200 active:translate-y-0.5 active:shadow-none disabled:opacity-50"
+            className="inline-flex h-12 items-center gap-2 rounded-lg bg-orange px-5 text-base font-bold text-brand-800 shadow-[0_2px_0_0_var(--urgent-600)] transition-transform hover:bg-urgent-300 active:translate-y-0.5 active:shadow-none disabled:opacity-50"
           >
             <PhoneOff className="size-5" aria-hidden /> Simulate a call-out
           </button>
-          <span className="inline-flex items-center gap-2 text-sm text-spruce-100">
+          <span className="inline-flex items-center gap-2 text-sm text-brand-100">
             <FlaskConical className="size-4" aria-hidden /> Simulated data. One minute passes each second.
           </span>
         </div>

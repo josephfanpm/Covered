@@ -6,7 +6,7 @@ function Stat({ value, label, alert = false }: { value: string; label: string; a
   return (
     <div className="flex flex-col-reverse gap-0.5">
       <dt className="text-sm text-slate-600">{label}</dt>
-      <dd className={`tabular text-2xl leading-tight font-bold ${alert ? 'text-marigold-600' : 'text-ink'}`}>{value}</dd>
+      <dd className={`tabular text-2xl leading-tight font-bold ${alert ? 'text-urgent-600' : 'text-ink'}`}>{value}</dd>
     </div>
   )
 }

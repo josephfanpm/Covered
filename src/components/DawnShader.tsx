@@ -18,9 +18,9 @@ export default function DawnShader() {
         uDensity={1.2}
         uFrequency={5.5}
         uAmplitude={1}
-        color1="#f5b82e"
-        color2="#1e5a5f"
-        color3="#00282e"
+        color1="#fc8c3a"
+        color2="#33a4d6"
+        color3="#002447"
         positionX={-1.4}
         positionY={0}
         positionZ={0}

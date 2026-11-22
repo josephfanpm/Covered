@@ -3,16 +3,16 @@ import type { Minutes, OpenVisit, Visit } from '@/sim/types'
 import { formatClock, formatTime } from '@/sim/util'
 
 const ZONE_FILL: Record<string, string> = {
-  steady: 'var(--spruce-100)',
-  quick: 'var(--spruce-200)',
-  wide: 'var(--marigold-100)',
-  urgent: 'var(--marigold-200)',
+  steady: 'var(--brand-100)',
+  quick: 'var(--brand-200)',
+  wide: 'var(--urgent-100)',
+  urgent: 'var(--urgent-200)',
 }
 
 const DOT: Record<string, string> = {
-  pending: 'var(--spruce-700)',
-  accepted: 'var(--moss-600)',
-  declined: 'var(--brick-500)',
+  pending: 'var(--brand-700)',
+  accepted: 'var(--good-600)',
+  declined: 'var(--bad-500)',
   expired: 'var(--slate-400)',
   withdrawn: 'var(--slate-400)',
 }
@@ -51,7 +51,7 @@ export function TimeTrack({ open, visit, now, compact = false }: { open: OpenVis
         {callAt > from && (
           <div
             className="absolute inset-y-0 rounded-r-full"
-            style={{ left: pct(callAt), right: 0, background: 'var(--marigold-300)' }}
+            style={{ left: pct(callAt), right: 0, background: 'var(--orange)' }}
           />
         )}
         {/* Time already used. */}
@@ -59,8 +59,7 @@ export function TimeTrack({ open, visit, now, compact = false }: { open: OpenVis
           className="absolute inset-y-0 left-0 rounded-l-full"
           style={{
             width: pct(stopped),
-            background: open.status === 'covered' ? 'var(--moss-400)' : open.status === 'missed' ? 'var(--brick-500)' : 'var(--spruce-700)',
-            opacity: 0.9,
+            background: open.status === 'covered' ? 'var(--good-400)' : open.status === 'missed' ? 'var(--bad-500)' : 'var(--sky)',
           }}
         />
         {!compact &&
@@ -72,9 +71,9 @@ export function TimeTrack({ open, visit, now, compact = false }: { open: OpenVis
             />
           ))}
         {!compact && (open.status === 'offering' || open.status === 'needs_call') && (
-          <span className="absolute -top-6 -translate-x-1/2 text-xs font-semibold whitespace-nowrap text-spruce-700" style={{ left: pct(now) }}>
+          <span className="absolute -top-6 -translate-x-1/2 text-xs font-semibold whitespace-nowrap text-brand-700" style={{ left: pct(now) }}>
             <span className="tabular">{formatTime(now)}</span>
-            <span aria-hidden className="absolute top-full left-1/2 h-9 w-px -translate-x-1/2 bg-spruce-700" />
+            <span aria-hidden className="absolute top-full left-1/2 h-9 w-px -translate-x-1/2 bg-brand-700" />
           </span>
         )}
       </div>

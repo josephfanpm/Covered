@@ -5,13 +5,13 @@ import { BackgroundColor, Color, Theme } from '@adobe/leonardo-contrast-colors'
 
 const ratios = { 100: 1.08, 200: 1.25, 300: 1.6, 400: 3, 500: 4.5, 600: 7, 700: 10, 800: 14 }
 
-const paper = new BackgroundColor({ name: 'paper', colorKeys: ['#F4F7F6'], ratios })
+const paper = new BackgroundColor({ name: 'paper', colorKeys: ['#F3F7FA'], ratios })
 const ramps = [
-  new Color({ name: 'spruce', colorKeys: ['#0E4F54', '#8FC7C2'], ratios, colorSpace: 'OKLCH' }),
-  new Color({ name: 'marigold', colorKeys: ['#F5B82E', '#7A4B00'], ratios, colorSpace: 'OKLCH' }),
-  new Color({ name: 'moss', colorKeys: ['#2F7D4F', '#A9D9B5'], ratios, colorSpace: 'OKLCH' }),
-  new Color({ name: 'brick', colorKeys: ['#B8432F', '#F0B7A8'], ratios, colorSpace: 'OKLCH' }),
-  new Color({ name: 'slate', colorKeys: ['#3D4F52', '#C9D3D2'], ratios, colorSpace: 'OKLCH' }),
+  new Color({ name: 'brand', colorKeys: ['#33A4D6', '#12466B'], ratios, colorSpace: 'OKLCH' }),
+  new Color({ name: 'urgent', colorKeys: ['#FC8C3A', '#7A3A00'], ratios, colorSpace: 'OKLCH' }),
+  new Color({ name: 'good', colorKeys: ['#3DC21E', '#14520A'], ratios, colorSpace: 'OKLCH' }),
+  new Color({ name: 'bad', colorKeys: ['#CA1F1F', '#F2B3B3'], ratios, colorSpace: 'OKLCH' }),
+  new Color({ name: 'slate', colorKeys: ['#4A5568', '#CBD2DC'], ratios, colorSpace: 'OKLCH' }),
 ]
 
 const theme = new Theme({ colors: ramps, backgroundColor: paper, lightness: 96, output: 'HEX' })

@@ -10,22 +10,22 @@ import { StatusLine } from './StatusLine'
 import { TimeTrack } from './TimeTrack'
 
 const PARTS = [
-  { key: 'continuity', label: 'Knows the client', color: 'var(--spruce-700)' },
-  { key: 'travel', label: 'Short drive', color: 'var(--spruce-400)' },
-  { key: 'hours', label: 'Has hours left', color: 'var(--marigold-300)' },
+  { key: 'continuity', label: 'Knows the client', color: 'var(--brand-600)' },
+  { key: 'travel', label: 'Short drive', color: 'var(--sky)' },
+  { key: 'hours', label: 'Has hours left', color: 'var(--orange)' },
   { key: 'fit', label: 'Speaks the language', color: 'var(--slate-400)' },
 ] as const
 
-const ZONE_SWATCH = ['var(--spruce-100)', 'var(--spruce-200)', 'var(--marigold-100)', 'var(--marigold-200)']
+const ZONE_SWATCH = ['var(--brand-100)', 'var(--brand-200)', 'var(--urgent-100)', 'var(--urgent-200)']
 
 function offerNote(offer: Offer): { text: string; className: string } {
   switch (offer.status) {
     case 'pending':
-      return { text: `Texted ${formatClock(offer.sentAt)}. Reply due ${formatClock(offer.replyBy)}.`, className: 'text-spruce-700' }
+      return { text: `Texted ${formatClock(offer.sentAt)}. Reply due ${formatClock(offer.replyBy)}.`, className: 'text-brand-700' }
     case 'accepted':
-      return { text: `Said yes at ${formatClock(offer.respondedAt ?? offer.sentAt)}`, className: 'text-moss-600' }
+      return { text: `Said yes at ${formatClock(offer.respondedAt ?? offer.sentAt)}`, className: 'text-good-600' }
     case 'declined':
-      return { text: `Said no at ${formatClock(offer.respondedAt ?? offer.sentAt)}`, className: 'text-brick-600' }
+      return { text: `Said no at ${formatClock(offer.respondedAt ?? offer.sentAt)}`, className: 'text-bad-600' }
     case 'expired':
       return { text: `Texted ${formatClock(offer.sentAt)}. No reply.`, className: 'text-slate-600' }
     case 'withdrawn':
@@ -60,7 +60,7 @@ function Reasons({ candidate, clientFirstName, language }: { candidate: Candidat
         <Car className={icon} aria-hidden />
         <span className="tabular">{f.travelMin} min</span> from {f.from}
       </li>
-      <li className={`${item} ${f.overtime ? 'font-semibold text-marigold-600' : ''}`}>
+      <li className={`${item} ${f.overtime ? 'font-semibold text-urgent-600' : ''}`}>
         <Clock className={icon} aria-hidden />
         <span className="tabular">{Math.round(f.hoursAfter)} h</span> this week{f.overtime ? ', overtime' : ''}
       </li>
@@ -172,7 +172,7 @@ export function VisitDetail({
                   <Reasons candidate={candidate} clientFirstName={firstName} language={client.language} />
                   <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
                     <span className={`inline-flex items-center gap-1.5 text-sm font-semibold ${note.className}`}>
-                      {offer.status === 'pending' && <span aria-hidden className="size-2 animate-pulse rounded-full bg-spruce-700" />}
+                      {offer.status === 'pending' && <span aria-hidden className="size-2 animate-pulse rounded-full bg-brand-700" />}
                       {note.text}
                     </span>
                     <span className="flex gap-2">
@@ -180,7 +180,7 @@ export function VisitDetail({
                         variant="outline"
                         onClick={() => onShowTexts(offer.caregiverId)}
                         aria-pressed={phoneId === offer.caregiverId}
-                        className="h-11 px-3 text-sm font-semibold aria-pressed:border-spruce-700 aria-pressed:bg-spruce-100 sm:h-9"
+                        className="h-11 px-3 text-sm font-semibold aria-pressed:border-brand-700 aria-pressed:bg-brand-100 sm:h-9"
                       >
                         <MessageSquareText aria-hidden /> Texts
                       </Button>
@@ -256,7 +256,7 @@ function AssignButton({ onClick }: { onClick: () => void }) {
     <Button
       variant="outline"
       onClick={onClick}
-      className="h-11 border-spruce-700 px-3 text-sm font-semibold text-spruce-700 hover:bg-spruce-100 hover:text-spruce-800 sm:h-9"
+      className="h-11 border-brand-700 px-3 text-sm font-semibold text-brand-700 hover:bg-brand-100 hover:text-brand-800 sm:h-9"
     >
       <UserRoundCheck aria-hidden /> Assign
     </Button>

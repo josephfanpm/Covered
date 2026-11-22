@@ -38,7 +38,7 @@ export function Phone({
             const mine = t.from === 'caregiver'
             return (
               <div key={t.id} className={`flex max-w-[85%] animate-arrive flex-col ${mine ? 'items-end self-end' : 'items-start self-start'}`}>
-                <p className={`rounded-2xl px-3.5 py-2 text-[0.9375rem] leading-snug ${mine ? 'rounded-br-md bg-spruce-700 text-white' : 'rounded-bl-md bg-slate-100 text-ink'}`}>
+                <p className={`rounded-2xl px-3.5 py-2 text-[0.9375rem] leading-snug ${mine ? 'rounded-br-md bg-brand-500 text-white' : 'rounded-bl-md bg-slate-100 text-ink'}`}>
                   {t.body}
                 </p>
                 <span className="tabular mt-0.5 px-1 text-xs text-slate-600">{formatClock(t.at)}</span>
@@ -52,7 +52,7 @@ export function Phone({
               <button
                 type="button"
                 onClick={() => onAnswer(waiting.visitId, caregiverId, true)}
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-moss-600 text-base font-bold text-white hover:opacity-90"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-good-600 text-base font-bold text-white hover:opacity-90"
               >
                 <Check className="size-5" aria-hidden /> Reply YES
               </button>

@@ -2,18 +2,19 @@
 name: Covered
 description: A scheduler's tool for filling open home care visits. Calm, legible, and built around the clock.
 colors:
-  paper: "#F0F3F2"
+  paper: "#EFF3F6"
   surface: "#FFFFFF"
-  ink: "#162629"
-  text-muted: "#445558"
-  line: "#D3DBDA"
-  primary: "#004247"
-  primary-tint: "#DCEDEB"
-  urgent: "#F5B82E"
-  urgent-text: "#764800"
-  urgent-tint: "#FCE8C2"
-  good: "#035F33"
-  bad: "#9B2713"
+  ink: "#1A2334"
+  text-muted: "#485365"
+  line: "#D6DBE3"
+  sky: "#33A4D6"
+  primary: "#19567F"
+  primary-tint: "#D8ECF7"
+  orange: "#FC8C3A"
+  urgent-text: "#833F03"
+  urgent-tint: "#FFE5D5"
+  good: "#195F0D"
+  bad: "#A90000"
 typography:
   family: "Atkinson Hyperlegible Next"
   display:
@@ -56,24 +57,25 @@ A scheduler at a home care agency, early in the morning, with a phone in one han
 ## What makes it look like itself
 
 1. **The clock is the subject.** Every open visit carries a time track that runs from the call-out to the start time. Its bands show how the offers change as the visit gets closer. This is the one element that is allowed to be bold.
-2. **Dawn, once.** The top band is a deep spruce sky with marigold coming up on the right, because this work happens at 7 AM. It is the only gradient in the product. Below it the page is flat.
+2. **Dawn, once.** The top band is a deep navy sky turning sky blue, with orange coming up on the right, because this work happens at 7 AM. It is the only gradient in the product. Below it the page is flat.
 3. **A typeface chosen for reading under pressure.** Atkinson Hyperlegible Next was drawn so that similar characters can't be confused. Times, names and numbers are the content here, so one family does every job and weight does the hierarchy.
 
 ## Colour
 
-Ramps are generated with Adobe Leonardo from target contrast ratios against the page background (`scripts/palette.mjs`), so each step is picked for readability first. Step 500 of any ramp is 4.5:1 on paper and step 600 is 7:1.
+The palette is the one schedulers and caregivers already know from home care apps: sky blue, slate, and orange, green and red for status. Two anchor colours are used exactly as they are, sky `#33A4D6` and orange `#FC8C3A`. Everything else is a ramp built around them with Adobe Leonardo from target contrast ratios against the page background (`scripts/palette.mjs`). Step 500 of any ramp is 4.5:1 on paper and step 600 is 7:1.
 
 | Role | Token | Use |
 |---|---|---|
-| Paper `#F0F3F2` | `--paper` | Page background. Cool, not cream. |
+| Paper `#EFF3F6` | `--paper` | Page background. Cool blue-grey. |
 | Surface `#FFFFFF` | `--surface` | Panels and rows that can be acted on. |
-| Ink `#162629` | `--slate-800` | Text. |
-| Muted `#445558` | `--slate-600` | Secondary text. Never lighter than this for words. |
-| Spruce `#004247` | `--spruce-700` | Primary. Selected state, time already used, the caregiver's own texts. |
-| Marigold `#F5B82E` | `--marigold-300` | Urgency only: the last stretch of the time track, the main call to action. Text on it is always spruce or ink. |
-| Marigold text `#764800` | `--marigold-600` | "Phone needed" and other urgent words on a light background. |
-| Moss `#035F33` | `--moss-600` | Covered. |
-| Brick `#9B2713` | `--brick-600` | Said no, or missed. |
+| Ink `#1A2334` | `--slate-800` | Text. |
+| Muted `#485365` | `--slate-600` | Secondary text. Never lighter than this for words. |
+| Sky `#33A4D6` | `--sky` | The brand colour, for fills only: time already used, the selected row's marker, the sky in the top band. It is 2.6:1 on paper, so it never carries text. |
+| Blue `#19567F` | `--brand-600` | Primary where words or outlines are involved: buttons, links, pending status. |
+| Orange `#FC8C3A` | `--orange` | Urgency only: the last stretch of the time track and the main call to action. Text on it is always navy. |
+| Orange text `#833F03` | `--urgent-600` | "Phone needed" and other urgent words on a light background. |
+| Green `#195F0D` | `--good-600` | Covered. |
+| Red `#A90000` | `--bad-600` | Said no, or missed. |
 
 Status is never colour alone. Each state has its own icon and its own words.
 
@@ -125,10 +127,10 @@ Everything is left-aligned. The ranked list is numbered because it is a real ord
 
 Built on shadcn/ui (copied into `src/components/ui`) and Tailwind. Icons are Lucide only.
 
-- **Time track**: rounded bar, bands tinted from spruce to marigold, a spruce fill for time used, dots for each text sent, a labelled marker for now.
-- **Status line**: icon plus words. Working (spruce, message icon), phone needed (marigold text, phone icon), covered (moss, check), missed (brick, cross).
+- **Time track**: rounded bar, bands tinted from blue to orange, a sky fill for time used, dots for each text sent, a labelled marker for now.
+- **Status line**: icon plus words. Working (blue, message icon), phone needed (orange text, phone icon), covered (green, check), missed (red, cross).
 - **Score bar**: four segments that add up to the match score, in the same order as the legend above the list.
-- **Phone**: thick ink bezel, agency texts in grey on the left, the caregiver's replies in spruce on the right, YES and NO as 48px buttons.
+- **Phone**: thick navy bezel, agency texts in grey on the left, the caregiver's replies in blue on the right, YES and NO as 48px buttons.
 
 ## Words
 
@@ -139,7 +141,7 @@ Built on shadcn/ui (copied into `src/components/ui`) and Tailwind. Icons are Luc
 
 ## Don't
 
-- No second accent colour. Marigold means time is running out and nothing else.
+- No second accent colour. Orange means time is running out and nothing else.
 - No gradients outside the top band.
 - No identical card grids. Rows are rows.
 - No all-caps eyebrow labels, no mono type for numbers, no arrows on buttons.

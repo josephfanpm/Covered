@@ -17,13 +17,13 @@ function Row({ sim, open, selected, onSelect }: { sim: SimState; open: OpenVisit
         type="button"
         onClick={onSelect}
         aria-current={selected}
-        className={`relative block w-full overflow-hidden rounded-xl border bg-surface p-4 text-left transition-colors hover:border-spruce-400 aria-[current=true]:border-spruce-700 aria-[current=true]:shadow-[inset_4px_0_0_0_var(--spruce-700)] ${active ? '' : 'bg-transparent'}`}
+        className={`relative block w-full overflow-hidden rounded-xl border bg-surface p-4 text-left transition-colors hover:border-brand-400 aria-[current=true]:border-brand-500 aria-[current=true]:shadow-[inset_4px_0_0_0_var(--sky)] ${active ? '' : 'bg-transparent'}`}
       >
         {justCovered && <span aria-hidden className="covered-sheen pointer-events-none absolute inset-0" />}
         <div className="flex items-baseline justify-between gap-3">
           <span className="text-base font-bold text-ink">{client.name}</span>
           {active && (
-            <span className={`tabular shrink-0 text-sm font-semibold ${open.status === 'needs_call' ? 'text-marigold-600' : 'text-slate-600'}`}>
+            <span className={`tabular shrink-0 text-sm font-semibold ${open.status === 'needs_call' ? 'text-urgent-600' : 'text-slate-600'}`}>
               in {formatDuration(visit.start - sim.now)}
             </span>
           )}
