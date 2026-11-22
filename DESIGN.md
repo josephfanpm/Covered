@@ -17,13 +17,8 @@ colors:
   bad: "#A90000"
 typography:
   family: "Atkinson Hyperlegible Next"
-  display:
-    fontSize: 3.4rem
-    fontWeight: 800
-    lineHeight: 1.05
-    letterSpacing: -0.025em
   title:
-    fontSize: 1.75rem
+    fontSize: 1.5rem
     fontWeight: 800
     lineHeight: 1.2
   heading:
@@ -56,8 +51,8 @@ A scheduler at a home care agency, early in the morning, with a phone in one han
 
 ## What makes it look like itself
 
-1. **The clock is the subject.** Every open visit carries a time track that runs from the call-out to the start time. Its bands show how the offers change as the visit gets closer. This is the one element that is allowed to be bold.
-2. **Dawn, once.** The top band is a deep navy sky turning sky blue, with orange coming up on the right, because this work happens at 7 AM. It is the only gradient in the product. Below it the page is flat.
+1. **The clock is the subject.** Every open visit carries a time track that runs from the call-out to the start time: blue for time used, orange for the last stretch where a phone call is needed, dots for texts sent.
+2. **One thing per glance.** A row shows a name, two facts and a status. Everything else (the score breakdown, the rest of the team, who can't take it) is one step away, not on screen by default. No legends: if something needs a key, it is simplified until it doesn't.
 3. **A typeface chosen for reading under pressure.** Atkinson Hyperlegible Next was drawn so that similar characters can't be confused. Times, names and numbers are the content here, so one family does every job and weight does the hierarchy.
 
 ## Colour
@@ -70,7 +65,7 @@ The palette is the one schedulers and caregivers already know from home care app
 | Surface `#FFFFFF` | `--surface` | Panels and rows that can be acted on. |
 | Ink `#1A2334` | `--slate-800` | Text. |
 | Muted `#485365` | `--slate-600` | Secondary text. Never lighter than this for words. |
-| Sky `#33A4D6` | `--sky` | The brand colour, for fills only: time already used, the selected row's marker, the sky in the top band. It is 2.6:1 on paper, so it never carries text. |
+| Sky `#33A4D6` | `--sky` | The brand colour, for fills only: time already used and the selected row's marker. It is 2.6:1 on paper, so it never carries text. |
 | Blue `#19567F` | `--brand-600` | Primary where words or outlines are involved: buttons, links, pending status. |
 | Orange `#FC8C3A` | `--orange` | Urgency only: the last stretch of the time track and the main call to action. Text on it is always navy. |
 | Orange text `#833F03` | `--urgent-600` | "Phone needed" and other urgent words on a light background. |
@@ -83,53 +78,48 @@ Status is never colour alone. Each state has its own icon and its own words.
 
 One family, Atkinson Hyperlegible Next (self-hosted, variable weight). Sentence case everywhere. No all-caps labels. Numbers that change or line up use tabular figures (`.tabular`).
 
-- Display 3.4rem / 800, for the single headline.
-- Title 1.75rem / 800, for the client's name on the selected visit.
+- Title 1.5rem / 800, for the client's name on the selected visit.
 - Heading 1.125rem / 700, for section names.
 - Body 1rem / 400. Small 0.875rem for supporting facts.
 - Lines stay under about 60 characters.
 
 ## Layout
 
-Phone first. One column on a phone: summary numbers, open visits, the selected visit, then the caregiver's phone. From 1024px the list sits left of the detail. From 1280px the phone takes a third column.
+Phone first. One column on a phone: the bar, open visits, the selected visit, then the caregiver's phone. From 1024px the list sits left of the detail. From 1280px the phone takes a third column.
 
 ```
-┌──────────────────────────────── dawn band ────────────────────────────────┐
-│ Covered                                               7:42 AM  ▶  1× 4×  │
-│ Headline, one sentence, [Simulate a call-out]                             │
-└───────────────────────────────────────────────────────────────────────────┘
-  2 of 4 covered     9 min typical     2 open     1 needs a phone call
-
-  Open visits        ┌ Selected visit ───────────────┐   Caregiver's phone
-  ▌Arthur L.  1h47   │ Name            9:30–10:30 AM │   ┌──────────────┐
-   Vivian O.  2h17   │ ━━━━━━━●━━━━━━━━━━━ time track │   │ texts        │
-  Earlier today      │ 1  Priya   ▮▮▮▮▯  84  Said no  │   │              │
-   Lourdes R.  ✓     │ 2  Devon   ▮▮▮▮▯  83  [Assign] │   │ [YES]  [NO]  │
-                     └───────────────────────────────┘   └──────────────┘
+ Covered   2 of 4 call-outs covered, typically in 9 min      7:42 AM ▶ »  [Simulate a call-out]
+───────────────────────────────────────────────────────────────────────────────────────────────
+ Open visits        ┌ Arthur Lindqvist         9:30–10:30 AM ┐   ┌ Sofia's phone ┐
+ ▌Arthur L.  1h48   │ ━━━━━━━●──────────────━━━ time track   │   │ texts         │
+  Vivian O.  2h18   │ Phone needed                           │   │               │
+ Earlier today      │ 1  Devon Carter  No reply   83 [Assign] │   │ [YES]  [NO]   │
+  Lourdes R.  ✓     │ 2  Jin Park      No reply   52 [Assign] │   └───────────────┘
+                    │ Show everyone (21 more)                │
+                    └────────────────────────────────────────┘
 ```
 
-Everything is left-aligned. The ranked list is numbered because it is a real order: it is the sequence the offers go out in.
+There is no page header or hero. The top bar holds the name, one line of numbers, the clock and the one action that starts the demo. Everything is left-aligned. The ranked list is numbered because it is a real order: it is the sequence the offers go out in.
 
 ## Shape and depth
 
 - Controls 8px, list rows 12px, panels 16px, the phone 28px. Radius grows with the size of the thing.
-- Borders, not shadows. The only shadow is the hard 2px edge under the main button.
-- A row that can be acted on is white. A finished one drops back to the paper colour.
+- Borders, not shadows.
+- Only the selected visit and the detail panel are white. Everything else sits on the paper colour.
 
 ## Motion
 
 - The clock ticks and the time track fills. That is data, not decoration.
 - A new text or a new offer slides up 6px as it arrives.
 - When a visit is covered, one light sweep crosses its row, once.
-- Under reduced motion the animated sky is not loaded at all and the static gradient stays.
 
 ## Components
 
 Built on shadcn/ui (copied into `src/components/ui`) and Tailwind. Icons are Lucide only.
 
-- **Time track**: rounded bar, bands tinted from blue to orange, a sky fill for time used, dots for each text sent, a labelled marker for now.
+- **Time track**: thin rounded bar, a sky fill for time used, orange for the last 30 minutes, dots for each text sent, a labelled marker for now.
 - **Status line**: icon plus words. Working (blue, message icon), phone needed (orange text, phone icon), covered (green, check), missed (red, cross).
-- **Score bar**: four segments that add up to the match score, in the same order as the legend above the list.
+- **Match score**: a single number per caregiver. Its four parts show in a tooltip.
 - **Phone**: thick navy bezel, agency texts in grey on the left, the caregiver's replies in blue on the right, YES and NO as 48px buttons.
 
 ## Words
@@ -142,7 +132,7 @@ Built on shadcn/ui (copied into `src/components/ui`) and Tailwind. Icons are Luc
 ## Don't
 
 - No second accent colour. Orange means time is running out and nothing else.
-- No gradients outside the top band.
+- No gradients, and no legends.
 - No identical card grids. Rows are rows.
 - No all-caps eyebrow labels, no mono type for numbers, no arrows on buttons.
 - No status shown by colour alone.

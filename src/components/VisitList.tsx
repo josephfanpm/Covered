@@ -1,6 +1,6 @@
 import { clientOf, isActive, statusOf, visitOf } from '@/lib/view'
 import type { OpenVisit, SimState } from '@/sim/types'
-import { formatDuration, formatRange } from '@/sim/util'
+import { formatClock, formatDuration } from '@/sim/util'
 import { StatusLine } from './StatusLine'
 import { TimeTrack } from './TimeTrack'
 
@@ -17,24 +17,21 @@ function Row({ sim, open, selected, onSelect }: { sim: SimState; open: OpenVisit
         type="button"
         onClick={onSelect}
         aria-current={selected}
-        className={`relative block w-full overflow-hidden rounded-xl border bg-surface p-4 text-left transition-colors hover:border-brand-400 aria-[current=true]:border-brand-500 aria-[current=true]:shadow-[inset_4px_0_0_0_var(--sky)] ${active ? '' : 'bg-transparent'}`}
+        className="relative block w-full overflow-hidden rounded-lg px-3 py-3 text-left hover:bg-slate-100 aria-[current=true]:bg-surface aria-[current=true]:shadow-[inset_3px_0_0_0_var(--sky)]"
       >
         {justCovered && <span aria-hidden className="covered-sheen pointer-events-none absolute inset-0" />}
-        <div className="flex items-baseline justify-between gap-3">
-          <span className="text-base font-bold text-ink">{client.name}</span>
-          {active && (
-            <span className={`tabular shrink-0 text-sm font-semibold ${open.status === 'needs_call' ? 'text-urgent-600' : 'text-slate-600'}`}>
-              in {formatDuration(visit.start - sim.now)}
-            </span>
-          )}
-        </div>
-        <div className="tabular mt-0.5 text-sm text-slate-600">{formatRange(visit.start, visit.end)}</div>
+        <span className="flex items-baseline justify-between gap-3">
+          <span className={`font-bold ${active ? 'text-ink' : 'text-slate-600'}`}>{client.name}</span>
+          <span className="tabular shrink-0 text-sm text-slate-600">
+            {active ? `${formatDuration(visit.start - sim.now)} left` : formatClock(visit.start)}
+          </span>
+        </span>
+        <StatusLine tone={status.tone} text={status.text} className="mt-1" />
         {active && (
-          <div className="mt-3">
+          <span className="mt-2.5 block">
             <TimeTrack open={open} visit={visit} now={sim.now} compact />
-          </div>
+          </span>
         )}
-        <StatusLine tone={status.tone} text={status.text} className="mt-3" />
       </button>
     </li>
   )
@@ -47,30 +44,26 @@ export function VisitList({ sim, selectedId, onSelect }: { sim: SimState; select
   const done = sim.open.filter((o) => !isActive(o)).sort((a, b) => b.openedAt - a.openedAt)
 
   return (
-    <nav aria-label="Call-outs today" className="flex flex-col gap-6">
-      <section>
-        <h2 className="text-lg font-bold text-ink">Open visits</h2>
-        {active.length === 0 ? (
-          <p className="mt-3 rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-600">
-            Every visit is covered. Simulate a call-out to open one.
-          </p>
-        ) : (
-          <ul className="mt-3 flex flex-col gap-2">
-            {active.map((o) => (
-              <Row key={o.visitId} sim={sim} open={o} selected={o.visitId === selectedId} onSelect={() => onSelect(o.visitId)} />
-            ))}
-          </ul>
-        )}
-      </section>
+    <nav aria-label="Call-outs today">
+      <h2 className="px-3 text-sm font-bold text-slate-600">Open visits</h2>
+      {active.length === 0 ? (
+        <p className="px-3 py-3 text-sm text-slate-600">None. Every visit is covered.</p>
+      ) : (
+        <ul className="mt-1">
+          {active.map((o) => (
+            <Row key={o.visitId} sim={sim} open={o} selected={o.visitId === selectedId} onSelect={() => onSelect(o.visitId)} />
+          ))}
+        </ul>
+      )}
       {done.length > 0 && (
-        <section>
-          <h2 className="text-lg font-bold text-ink">Earlier today</h2>
-          <ul className="mt-3 flex flex-col gap-2">
+        <>
+          <h2 className="mt-5 px-3 text-sm font-bold text-slate-600">Earlier today</h2>
+          <ul className="mt-1">
             {done.map((o) => (
               <Row key={o.visitId} sim={sim} open={o} selected={o.visitId === selectedId} onSelect={() => onSelect(o.visitId)} />
             ))}
           </ul>
-        </section>
+        </>
       )}
     </nav>
   )

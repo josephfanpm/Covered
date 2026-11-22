@@ -45,10 +45,10 @@ Covered is a prototype of that part.
 ## Solution
 
 - **Open visits, soonest first.** Each one shows how long is left and where it stands: texting someone, phone needed, covered or missed.
-- **A ranked list with reasons.** For the selected visit, every caregiver who can take it, in the order they will be asked: how many times they have seen the client, the drive from where they will be, their hours this week, and a score out of 100. Everyone who can't take it is listed with the reason.
+- **A short ranked list with reasons.** For the selected visit, the caregivers still in play and the next few to be asked, each with how many times they have seen the client, the drive from where they will be, and a match score out of 100. "Show everyone" adds the rest of the team, including who can't take it and why.
 - **Offers by text, in order.** The first YES gets the visit. Anyone else still holding an offer is told it's covered.
 - **Escalation on a clock.** A time track on each visit shows how the offers change as the start gets closer.
-- **A handoff to the scheduler.** When time is short or nobody is left to text, the visit is flagged "Phone needed" and the scheduler can assign someone by hand.
+- **A handoff to the scheduler.** When time is short or nobody is left to text, the visit is flagged "Phone needed" and an Assign button appears beside each caregiver who can still take it.
 - **The caregiver's side.** A phone shows the texts each caregiver received. In the demo you can reply YES or NO for them, or let the simulation answer.
 
 ### How the ranking works
@@ -101,10 +101,10 @@ I built Covered with Claude Code as a pair programmer. I set the product directi
 | **Where travel is measured from** | Home · previous visit that day | Previous visit | Simplicity. It needs the day's schedule, not just an address. | A caregiver finishing a visit two streets away is closer than one who lives nearby but is across town at 9:00. |
 | **Overtime and other branches** | Never · always · only when time is short | Only under 2 hours out, or once the branch has nobody left | Some earlier fills, and some overtime cost late | Overtime is cheaper than a missed visit and more expensive than a regular fill. The clock decides which one is at stake. |
 | **Rules vs. scores** | Score everything · hard rules for safety and schedule | Hard rules for training, allergies, schedule clashes and time off | A near-match can't be offered even in an emergency | An untrained caregiver or a double-booking is not a worse option. It is not an option. |
-| **Who confirms** | Scheduler approves each yes · first yes wins | First yes wins, automatically | The scheduler's final say on each fill | A yes that waits for approval can expire. Only people the rules allow are ever asked, and the scheduler can still assign by hand at any point. |
+| **Who confirms** | Scheduler approves each yes · first yes wins | First yes wins, automatically | The scheduler's final say on each fill | A yes that waits for approval can expire. Only people the rules allow are ever asked, and the scheduler takes over once a visit is flagged for a phone call. |
 | **When to hand over** | Keep texting until the start · flag for a phone call | Flag at 30 minutes, or when nobody is left to text | Full automation | A text can be missed. Close to the start, a call from a person is the better tool, and the product should say so. |
 | **After a call-out** | Still offer them other visits · leave them out for the day | Left out for the day | A caregiver who dropped one visit but could do a later one | Someone who just called out is usually unavailable, and the text would read badly. |
-| **Showing the reasoning** | Show only the order · show the reasons | Reasons, score parts and every rule-out | A simpler screen | A scheduler won't trust an order they can't check, and will overrule it by habit. |
+| **Showing the reasoning** | Show only the order · show everything · show the top reasons, the rest on request | Two facts and a score per caregiver, with the score breakdown and every rule-out one step away | Some detail at a glance | A scheduler won't trust an order they can't check. A screen that shows every factor for every caregiver is too much to read at 7 AM. |
 | **Demo data** | Random each load · fixed simulated day | Fixed seed, the same day every time | Variety | Anyone opening the demo sees the same state, and the tests can assert on it. |
 
 **Known gaps:** the score weights and reply windows are my starting assumptions and have not been tuned on real data. A caregiver who doesn't reply is never texted again for that visit. The simulation's reply rates are invented, so the demo can't show whether this fills more visits than a scheduler with a phone.
@@ -160,7 +160,7 @@ A static single-page app with no backend. The whole simulation runs in the brows
 | Offers | [`src/sim/engine.ts`](src/sim/engine.ts): escalation stages, replies, cover, withdraw and hand-off, as functions that take a state and return a new one |
 | Simulated day | [`src/sim/data.ts`](src/sim/data.ts): 30 caregivers, 42 clients and 53 visits on an invented street grid, generated from a fixed seed |
 | Tests | [`src/sim/engine.test.ts`](src/sim/engine.test.ts) (Vitest) |
-| Design | [DESIGN.md](DESIGN.md) holds the colours, type and rules. Colours are generated from contrast ratios with Adobe Leonardo ([`scripts/palette.mjs`](scripts/palette.mjs)). The top band uses ShaderGradient, loaded only when motion is allowed. |
+| Design | [DESIGN.md](DESIGN.md) holds the colours, type and rules. Colours are generated from contrast ratios with Adobe Leonardo ([`scripts/palette.mjs`](scripts/palette.mjs)). |
 | CI/CD | [`deploy.yml`](.github/workflows/deploy.yml) runs the tests and a type-checked build, then deploys to GitHub Pages on every push to `main` |
 
 ## Running it locally

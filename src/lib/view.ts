@@ -13,13 +13,11 @@ export type Tone = 'working' | 'urgent' | 'good' | 'bad'
 export function statusOf(sim: SimState, open: OpenVisit): { tone: Tone; text: string } {
   const pending = open.offers.filter((f) => f.status === 'pending').map((f) => caregiverOf(sim, f.caregiverId).firstName)
   if (open.status === 'covered') {
-    const who = caregiverOf(sim, open.coveredBy as string).name
+    const who = caregiverOf(sim, open.coveredBy as string).firstName
     return { tone: 'good', text: `Covered by ${who} in ${formatWait((open.coveredAt as number) - open.openedAt)}` }
   }
-  if (open.status === 'missed') return { tone: 'bad', text: 'Missed. Nobody confirmed in time.' }
-  if (open.status === 'needs_call') {
-    return { tone: 'urgent', text: pending.length ? `Phone needed. Still texting ${pending.join(', ')}.` : 'Phone needed' }
-  }
+  if (open.status === 'missed') return { tone: 'bad', text: 'Missed' }
+  if (open.status === 'needs_call') return { tone: 'urgent', text: 'Phone needed' }
   return { tone: 'working', text: pending.length ? `Texting ${pending.join(', ')}` : 'Finding the next caregiver' }
 }
 
