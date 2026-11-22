@@ -119,7 +119,7 @@ Built on shadcn/ui (copied into `src/components/ui`) and Tailwind. Icons are Luc
 
 - **Time track**: thin rounded bar, a sky fill for time used, orange for the last 30 minutes, dots for each text sent, a labelled marker for now.
 - **Status line**: icon plus words. Working (blue, message icon), phone needed (orange text, phone icon), covered (green, check), missed (red, cross).
-- **Match score**: the word "Match" and a number, in ink, never coloured by value. The list is already in score order, and colour is reserved for status. Clicking it opens one line saying what the score is made of.
+- **Match score**: the word "Match" and a number, in ink, never coloured by value. The list is already in score order, and colour is reserved for status. Hovering, focusing or tapping it opens a small card with the four parts. The card floats over the list, so nothing moves.
 - **Phone**: thick navy bezel, agency texts in grey on the left, the caregiver's replies in blue on the right, YES and NO as 48px buttons.
 
 ## Words

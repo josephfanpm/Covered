@@ -1,4 +1,5 @@
 import { BellRing, CalendarClock, ChevronDown, MessageSquareText, UserRoundCheck } from 'lucide-react'
+import { Popover } from '@base-ui/react/popover'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { caregiverOf, clientOf, isActive, statusOf, visitOf } from '@/lib/view'
@@ -40,17 +41,55 @@ function facts(c: Candidate, clientFirstName: string): string {
   return parts.join(', ')
 }
 
-/** What the match score is made of, in words. */
-function breakdown(c: Candidate, clientFirstName: string): string {
+/** What the match score is made of: each factor, and how many of its points this caregiver got. */
+function matchParts(c: Candidate, clientFirstName: string): { label: string; got: number; of: number }[] {
   const p = c.parts
-  const parts = [
-    `Knows ${clientFirstName} ${Math.round(p.continuity)} of 40`,
-    `short drive ${Math.round(p.travel)} of 30`,
-    `hours left this week ${Math.round(p.hours)} of 15`,
-    `speaks the language ${Math.round(p.fit)} of 15`,
+  return [
+    { label: `Knows ${clientFirstName}`, got: Math.round(p.continuity), of: 40 },
+    { label: 'Short drive', got: Math.round(p.travel), of: 30 },
+    { label: 'Hours left this week', got: Math.round(p.hours), of: 15 },
+    { label: 'Speaks the language', got: Math.round(p.fit), of: 15 },
   ]
-  if (c.facts.lateBy > 0) parts.push(`minus ${c.facts.lateBy} for arriving late`)
-  return `${parts.join(', ')}.`
+}
+
+/** The match score. Hover, focus or tap opens a small card with the breakdown, so the list never shifts. */
+function MatchScore({ candidate, clientFirstName }: { candidate: Candidate; clientFirstName: string }) {
+  return (
+    <Popover.Root>
+      <Popover.Trigger
+        openOnHover
+        delay={150}
+        className="tabular inline-flex h-11 shrink-0 items-center gap-1 rounded-lg px-2 text-sm text-slate-600 underline decoration-slate-300 decoration-dotted underline-offset-4 hover:bg-slate-100 data-[popup-open]:bg-slate-100"
+      >
+        Match <strong className="font-bold text-ink">{candidate.score}</strong>
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Positioner side="bottom" align="end" sideOffset={4}>
+          <Popover.Popup className="w-64 rounded-xl border bg-surface p-4 text-sm shadow-[0_8px_24px_-8px_rgb(26_35_52/0.25)] outline-none">
+            <Popover.Title className="font-bold text-ink">
+              {candidate.caregiver.firstName}'s match: {candidate.score} of 100
+            </Popover.Title>
+            <dl className="tabular mt-2 grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-slate-600">
+              {matchParts(candidate, clientFirstName).map((part) => (
+                <div key={part.label} className="contents">
+                  <dt>{part.label}</dt>
+                  <dd className="text-right">
+                    <span className="font-semibold text-ink">{part.got}</span> of {part.of}
+                  </dd>
+                </div>
+              ))}
+              {candidate.facts.lateBy > 0 && (
+                <div className="contents">
+                  <dt>Arriving late</dt>
+                  <dd className="text-right font-semibold text-ink">−{candidate.facts.lateBy}</dd>
+                </div>
+              )}
+            </dl>
+          </Popover.Popup>
+        </Popover.Positioner>
+      </Popover.Portal>
+    </Popover.Root>
+  )
 }
 
 function Row({
@@ -68,7 +107,6 @@ function Row({
   pending?: boolean
   children?: React.ReactNode
 }) {
-  const [explained, setExplained] = useState(false)
   return (
     <li className={`flex flex-wrap items-center gap-x-3 gap-y-1 py-3 ${pending ? 'animate-arrive' : ''}`}>
       <span className="tabular w-5 shrink-0 text-right text-sm text-slate-500">{position}</span>
@@ -83,17 +121,8 @@ function Row({
           )}
         </p>
         <p className="text-sm text-slate-600">{facts(candidate, clientFirstName)}</p>
-        {explained && <p className="mt-1 text-sm text-slate-600">{breakdown(candidate, clientFirstName)}</p>}
       </div>
-      <button
-        type="button"
-        onClick={() => setExplained(!explained)}
-        aria-expanded={explained}
-        className="tabular inline-flex h-11 shrink-0 items-center gap-1 rounded-lg px-2 text-sm text-slate-600 hover:bg-slate-100"
-      >
-        Match <strong className="font-bold text-ink">{candidate.score}</strong>
-        <ChevronDown className={`size-3.5 transition-transform ${explained ? 'rotate-180' : ''}`} aria-hidden />
-      </button>
+      <MatchScore candidate={candidate} clientFirstName={clientFirstName} />
       <span className="flex w-full shrink-0 justify-end gap-1 empty:hidden sm:w-auto">{children}</span>
     </li>
   )
