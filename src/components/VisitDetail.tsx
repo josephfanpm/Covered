@@ -27,7 +27,7 @@ function offerNote(offer: Offer): { text: string; className: string } {
   }
 }
 
-/** The two or three facts that explain where someone ranks. The full breakdown is in the tooltip. */
+/** The two or three facts that explain where someone ranks. The rest is behind the match score. */
 function facts(c: Candidate, clientFirstName: string): string {
   const f = c.facts
   const parts = [
@@ -40,15 +40,22 @@ function facts(c: Candidate, clientFirstName: string): string {
   return parts.join(', ')
 }
 
-function breakdown(c: Candidate): string {
+/** What the match score is made of, in words. */
+function breakdown(c: Candidate, clientFirstName: string): string {
   const p = c.parts
-  return `Match ${c.score} of 100. Knows the client ${Math.round(p.continuity)}/40, drive ${Math.round(p.travel)}/30, hours left ${Math.round(p.hours)}/15, language ${Math.round(p.fit)}/15.`
+  const parts = [
+    `Knows ${clientFirstName} ${Math.round(p.continuity)} of 40`,
+    `short drive ${Math.round(p.travel)} of 30`,
+    `hours left this week ${Math.round(p.hours)} of 15`,
+    `speaks the language ${Math.round(p.fit)} of 15`,
+  ]
+  if (c.facts.lateBy > 0) parts.push(`minus ${c.facts.lateBy} for arriving late`)
+  return `${parts.join(', ')}.`
 }
 
 function Row({
   position,
   candidate,
-  score,
   clientFirstName,
   note,
   pending = false,
@@ -56,12 +63,12 @@ function Row({
 }: {
   position: number
   candidate: Candidate
-  score: number
   clientFirstName: string
   note?: { text: string; className: string }
   pending?: boolean
   children?: React.ReactNode
 }) {
+  const [explained, setExplained] = useState(false)
   return (
     <li className={`flex flex-wrap items-center gap-x-3 gap-y-1 py-3 ${pending ? 'animate-arrive' : ''}`}>
       <span className="tabular w-5 shrink-0 text-right text-sm text-slate-500">{position}</span>
@@ -76,11 +83,17 @@ function Row({
           )}
         </p>
         <p className="text-sm text-slate-600">{facts(candidate, clientFirstName)}</p>
+        {explained && <p className="mt-1 text-sm text-slate-600">{breakdown(candidate, clientFirstName)}</p>}
       </div>
-      <span className="tabular shrink-0 text-sm font-semibold text-slate-600" title={breakdown({ ...candidate, score })}>
-        <span className="sr-only">Match </span>
-        {score}
-      </span>
+      <button
+        type="button"
+        onClick={() => setExplained(!explained)}
+        aria-expanded={explained}
+        className="tabular inline-flex h-11 shrink-0 items-center gap-1 rounded-lg px-2 text-sm text-slate-600 hover:bg-slate-100"
+      >
+        Match <strong className="font-bold text-ink">{candidate.score}</strong>
+        <ChevronDown className={`size-3.5 transition-transform ${explained ? 'rotate-180' : ''}`} aria-hidden />
+      </button>
       <span className="flex w-full shrink-0 justify-end gap-1 empty:hidden sm:w-auto">{children}</span>
     </li>
   )
@@ -165,7 +178,6 @@ export function VisitDetail({
               key={offer.caregiverId}
               position={i + 1}
               candidate={candidate}
-              score={offer.score}
               clientFirstName={firstName}
               note={offer.status === 'accepted' && open.coveredVia !== 'offer' ? { text: 'Assigned', className: 'font-semibold text-good-600' } : offerNote(offer)}
               pending={offer.status === 'pending'}
@@ -190,7 +202,6 @@ export function VisitDetail({
             key={candidate.caregiver.id}
             position={inPlay.length + i + 1}
             candidate={candidate}
-            score={candidate.score}
             clientFirstName={firstName}
             note={i === 0 ? { text: 'Next', className: 'text-slate-600' } : undefined}
           >
