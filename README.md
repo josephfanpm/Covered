@@ -2,7 +2,7 @@
 
 When a caregiver calls out, Covered ranks the agency's own caregivers for the visit, texts the offer in order, and escalates as the start time nears. It is a working prototype that runs on a simulated day.
 
-**[Try the live demo](https://josephfanpm.github.io/covered/)** · [Design system](DESIGN.md)
+**[Try the live demo](https://josephfanpm.github.io/Covered/)** · [Design system](DESIGN.md)
 
 ![The scheduler's view: open visits on the left, the ranked caregivers for one visit in the middle, a caregiver's phone on the right](docs/screenshot.png)
 
