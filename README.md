@@ -1,30 +1,59 @@
-# Covered
+# Covered: filling open home care visits after a call-out
 
-Fills open home care visits after a call-out: ranks the agency's own caregivers, offers the visit in order, and escalates as the start time nears. Prototype with simulated data.
+When a caregiver calls out, Covered ranks the agency's own caregivers for the visit, texts the offer in order, and escalates as the start time nears. It is a working prototype that runs on a simulated day.
 
-**[Open the live demo](https://josephfanpm.github.io/covered/)**
+**[Try the live demo](https://josephfanpm.github.io/covered/)** · [Design system](DESIGN.md)
 
 ![The scheduler's view: open visits on the left, the ranked caregivers for one visit in the middle, a caregiver's phone on the right](docs/screenshot.png)
 
-All clients, caregivers and visits are simulated. No real agency data is used.
+This is an independent portfolio project. The agency, caregivers, clients and visits are invented, and no real agency data is used.
 
-## The problem
+## At a glance
 
-A home care visit happens in a client's home at a set time. When the caregiver calls out that morning, a scheduler has to find someone else before the client is left waiting. Today that usually means working down a list by phone.
+| | |
+|---|---|
+| **Problem** | A caregiver calls out and a client is expecting someone in a few hours. Finding a replacement means working down a list by phone, one call at a time. |
+| **User** | The scheduler at a home care agency with several branches. |
+| **Solution** | Rank the agency's own caregivers for the open visit, text the offer in order, ask more people faster as the start gets closer, and tell the scheduler when to pick up the phone. |
+| **Result** | A working prototype with 14 tests on the ranking and offer logic. No real-world result: every number in the demo comes from a simulated day. |
+| **My role** | Product and build: the problem, the ranking and escalation rules, the trade-offs, and the prototype. |
 
-Scheduling software can show the open visit and a shortlist of people who match. The slow part comes next: deciding who to ask first, asking them, waiting, and knowing when to stop waiting and try someone else. Covered is a prototype of that part.
+## Problem
 
-## What it does
+A home care visit happens in a client's home at a set time. When the caregiver calls out that morning, someone else has to be found before the client is left waiting.
 
-1. **Ranks the agency's own caregivers** for the open visit and shows why each one is where they are.
-2. **Texts the offer in order.** The first YES gets the visit. Everyone else still holding an offer is told it's covered.
-3. **Speeds up as the visit gets closer.** It asks more people at once, gives them less time to reply, and widens the search to other branches and overtime.
-4. **Tells the scheduler when to pick up the phone**, and lets them assign someone by hand.
-5. **Shows the day's numbers:** call-outs covered, typical time to cover, and what is still open.
+Scheduling software can list the open visit and a shortlist of caregivers who match. The slow part comes after that:
 
-## How the ranking works
+| Step the scheduler still does by hand | What goes wrong |
+|---|---|
+| Decide who to ask first | The best match is often not the first name on the list. A caregiver the client already knows is better care and more likely to say yes. |
+| Ask, then wait | Each call or text is a wait of unknown length. The scheduler is also handling other open visits at the same time. |
+| Know when to move on | Wait too long on one person and the visit runs out of time. Ask everyone at once and the best match loses out to whoever replies fastest. |
+| Know when to bend the rules | Overtime or a caregiver from another branch is worth it an hour before the visit, and not worth it five hours before. |
 
-Some things rule a caregiver out. The rest are scored out of 100.
+Covered is a prototype of that part.
+
+<!-- TODO(Joseph): add real evidence for the problem if you have it (scheduler interviews, industry call-out or missed-visit rates). None is claimed here. -->
+
+## Target users
+
+- **Schedulers and care coordinators** at home care agencies, who cover call-outs alongside the rest of the day's schedule.
+- **Caregivers**, who get a text they can answer with one word and can see why they were asked.
+
+<!-- TODO(Joseph): no user research was done for this prototype. Add any conversations with schedulers or agency operators here if you have them. -->
+
+## Solution
+
+- **Open visits, soonest first.** Each one shows how long is left and where it stands: texting someone, phone needed, covered or missed.
+- **A ranked list with reasons.** For the selected visit, every caregiver who can take it, in the order they will be asked: how many times they have seen the client, the drive from where they will be, their hours this week, and a score out of 100. Everyone who can't take it is listed with the reason.
+- **Offers by text, in order.** The first YES gets the visit. Anyone else still holding an offer is told it's covered.
+- **Escalation on a clock.** A time track on each visit shows how the offers change as the start gets closer.
+- **A handoff to the scheduler.** When time is short or nobody is left to text, the visit is flagged "Phone needed" and the scheduler can assign someone by hand.
+- **The caregiver's side.** A phone shows the texts each caregiver received. In the demo you can reply YES or NO for them, or let the simulation answer.
+
+### How the ranking works
+
+Some things rule a caregiver out. The rest are scored.
 
 **Ruled out if they:**
 
@@ -35,18 +64,16 @@ Some things rule a caregiver out. The rest are scored out of 100.
 - are allergic to the client's cat
 - called out themselves today
 
-**Scored on:**
+**Scored out of 100 on:**
 
-| Factor | Points | Why it matters in home care |
+| Factor | Points | Why |
 |---|---|---|
-| Knows the client | 40 | A familiar caregiver is better care and an easier yes. The score rises fast over the first few visits and then levels off, so 12 visits is not worth much more than 6. |
-| Short drive | 30 | Measured from where they will be, their previous visit that day, not from home. |
-| Has hours left | 15 | Spreads work towards people with fewer hours and away from overtime. |
+| Knows the client | 40 | Rises fast over the first few visits and then levels off: 1 visit is about 9 points, 4 is about 25, 12 is about 38. |
+| Short drive | 30 | Measured from where they will be (their previous visit that day), not from home. Zero at 45 minutes. |
+| Has hours left | 15 | Full marks at 24 hours or fewer this week, none at 40. |
 | Speaks the client's language | 15 | |
 
-The weights are my starting assumptions. They are in one place (`src/sim/rank.ts`) so they are easy to change and test.
-
-## How the offers escalate
+### How the offers escalate
 
 | Time until the visit | Asked at once | Time to reply | Who can be asked |
 |---|---|---|---|
@@ -55,42 +82,105 @@ The weights are my starting assumptions. They are in one place (`src/sim/rank.ts
 | 1 to 2 hours | 2 | 5 min | Any branch, overtime allowed |
 | Last hour | 3 | 3 min | Any branch, overtime allowed |
 
-Under 30 minutes with nobody confirmed, or when there is nobody left to text, the visit is flagged for a phone call. If a branch runs out of people early, the search widens straight away.
+Under 30 minutes with nobody confirmed, or when nobody is left to text, the visit is flagged for a phone call. If a branch runs out of people early, the search widens straight away.
 
-Asking one person at a time far from the start protects continuity: the best match gets a fair chance to say yes. Close to the start, speed matters more than the perfect match.
+## My role
 
-## What is simulated, and what that means
+I built Covered with Claude Code as a pair programmer. I set the product direction: the problem, what rules a caregiver out, the four scoring factors and their weights, the escalation stages, and when the product hands the visit back to a person. I reviewed the logic and the tests behind each rule.
 
-- The agency, its 30 caregivers, 42 clients and about 50 visits are generated from a fixed seed, on an invented street grid. The day is identical on every load.
-- Caregivers reply on their own unless you answer for them on the phone. How often and how fast they reply, and how likely they are to say yes, are assumptions I chose. A better match is more likely to say yes.
-- So the fill rate and time to cover on screen describe this simulated day. They show how the product behaves. They are not evidence that the approach fills more visits.
+<!-- TODO(Joseph): confirm this matches what you'd say in an interview. Add a line on your background (nursing, staffing marketplaces) if you want it here. -->
 
-## What I would test first with a real agency
+## Key decisions and trade-offs
 
-1. **Does ordered texting fill visits faster than a scheduler phoning down the list?** Measure time to cover and fill rate against the current process.
-2. **Are the weights right?** Compare who actually accepts against who was ranked first, then tune.
-3. **Do the reply windows match how caregivers use their phones?** If most replies come within 4 minutes, a 15-minute window wastes time.
-4. **Does widening to overtime cost more than a missed visit?** That is the agency's call, and the threshold should be theirs to set.
+| Decision | Options | Chose | Gave up | Why |
+|---|---|---|---|---|
+| **Who gets asked** | The agency's own caregivers · an outside pool of workers | Own caregivers only | A visit nobody on staff can take stays open | Clients are matched to an agency and its people. An outside pool is a different business, with its own recruiting, credentialing and liability. |
+| **How offers go out** | Text everyone at once · one at a time · one at a time, then small groups | One at a time far from the start, groups of two and three near it | Speed early on. A visit five hours away can take longer to fill. | Texting everyone gives the visit to whoever replies fastest. Asking in order gives the best match a fair chance while there is still time. |
+| **What ranks highest** | Closest caregiver · fewest hours · knows the client | Knows the client (40 of 100 points) | Some longer drives | In a client's home, a familiar face matters more than in a facility. It is also the easier yes. |
+| **How continuity is scored** | Count every past visit equally · level off | Levels off after the first few visits | Fine distinctions between long-standing caregivers | The gap between a stranger and someone with 4 visits matters. The gap between 12 and 20 doesn't, and shouldn't outweigh a 30-minute drive. |
+| **Where travel is measured from** | Home · previous visit that day | Previous visit | Simplicity. It needs the day's schedule, not just an address. | A caregiver finishing a visit two streets away is closer than one who lives nearby but is across town at 9:00. |
+| **Overtime and other branches** | Never · always · only when time is short | Only under 2 hours out, or once the branch has nobody left | Some earlier fills, and some overtime cost late | Overtime is cheaper than a missed visit and more expensive than a regular fill. The clock decides which one is at stake. |
+| **Rules vs. scores** | Score everything · hard rules for safety and schedule | Hard rules for training, allergies, schedule clashes and time off | A near-match can't be offered even in an emergency | An untrained caregiver or a double-booking is not a worse option. It is not an option. |
+| **Who confirms** | Scheduler approves each yes · first yes wins | First yes wins, automatically | The scheduler's final say on each fill | A yes that waits for approval can expire. Only people the rules allow are ever asked, and the scheduler can still assign by hand at any point. |
+| **When to hand over** | Keep texting until the start · flag for a phone call | Flag at 30 minutes, or when nobody is left to text | Full automation | A text can be missed. Close to the start, a call from a person is the better tool, and the product should say so. |
+| **After a call-out** | Still offer them other visits · leave them out for the day | Left out for the day | A caregiver who dropped one visit but could do a later one | Someone who just called out is usually unavailable, and the text would read badly. |
+| **Showing the reasoning** | Show only the order · show the reasons | Reasons, score parts and every rule-out | A simpler screen | A scheduler won't trust an order they can't check, and will overrule it by habit. |
+| **Demo data** | Random each load · fixed simulated day | Fixed seed, the same day every time | Variety | Anyone opening the demo sees the same state, and the tests can assert on it. |
 
-## Not built
+**Known gaps:** the score weights and reply windows are my starting assumptions and have not been tuned on real data. A caregiver who doesn't reply is never texted again for that visit. The simulation's reply rates are invented, so the demo can't show whether this fills more visits than a scheduler with a phone.
 
-- Real text messages. The phone on screen is a stand-in.
-- Predicting call-outs before they happen.
-- Clients' own preferences beyond language and pets.
-- Logins, saved data, or any connection to a scheduling system.
+## Success metrics
 
-## Run it
+**Measured (from the repo):**
+
+| What | Result | Source |
+|---|---|---|
+| Logic tests | 14 tests on ranking, rule-outs, escalation stages, replies and double-booking | [`engine.test.ts`](src/sim/engine.test.ts) |
+| Same day every load | The simulated day is rebuilt from a fixed seed and compared for equality in a test | [`data.ts`](src/sim/data.ts) |
+| The simulated day at 7:40 AM | 4 call-outs: 2 covered (3 and 15 minutes after the call-out), 1 being texted, 1 flagged for a phone call after 9 texts | Live demo |
+| The same day left untouched | Ends with 3 of 4 covered and 1 missed, the visit that was flagged for a phone call | Live demo |
+
+These describe how the prototype behaves on invented data. They are not evidence that the approach works at a real agency.
+
+**KPIs I would track with a real agency (proposed, not measured):**
+
+| KPI | Why |
+|---|---|
+| Share of call-outs covered before the start time | The outcome that matters to the client |
+| Time from call-out to a confirmed replacement | Whether ordered texting is faster than phoning down a list |
+| Share of fills by a caregiver the client has seen before | Whether speed is costing continuity |
+| Share of visits that reach "Phone needed" | How much work still lands on the scheduler |
+| Overtime hours added by late fills | The cost of widening the search |
+| Share of texts answered, and how fast | Whether the reply windows fit how caregivers use their phones |
+| Call-outs by caregivers who accepted a fill | Whether quick yeses turn into kept visits |
+
+## Roadmap
+
+Ordered by how much each item would teach about whether the idea works.
+
+| | Item | Why |
+|---|---|---|
+| **Next** | Run it against a real agency's past call-outs | Shows whether the ranking would have picked the caregiver who took the visit, before anything is sent to anyone |
+| **Next** | Let the agency set the weights and the overtime threshold | These are the agency's trade-offs to make, not the product's |
+| **Next** | Real text messages | The phone on screen is a stand-in |
+| **Later** | Flag visits likely to be called out before it happens | Covering a visit the night before is easier than at 7 AM |
+| **Later** | Client preferences beyond language and pets | Many clients have people they do and don't want |
+| **Later** | Offer a new time when nobody can make the original one | Some visits can move by an hour. A missed visit can't be recovered. |
+
+No RICE scores: there is no usage data to estimate reach honestly.
+
+## Technical overview
+
+A static single-page app with no backend. The whole simulation runs in the browser.
+
+| Area | Choice |
+|---|---|
+| Stack | React 19, TypeScript, Vite, Tailwind CSS v4, [shadcn/ui](https://ui.shadcn.com), [lucide-react](https://lucide.dev) icons |
+| Ranking | [`src/sim/rank.ts`](src/sim/rank.ts): rule-outs, the four scoring factors and their weights in one place |
+| Offers | [`src/sim/engine.ts`](src/sim/engine.ts): escalation stages, replies, cover, withdraw and hand-off, as functions that take a state and return a new one |
+| Simulated day | [`src/sim/data.ts`](src/sim/data.ts): 30 caregivers, 42 clients and 53 visits on an invented street grid, generated from a fixed seed |
+| Tests | [`src/sim/engine.test.ts`](src/sim/engine.test.ts) (Vitest) |
+| Design | [DESIGN.md](DESIGN.md) holds the colours, type and rules. Colours are generated from contrast ratios with Adobe Leonardo ([`scripts/palette.mjs`](scripts/palette.mjs)). The top band uses ShaderGradient, loaded only when motion is allowed. |
+| CI/CD | [`deploy.yml`](.github/workflows/deploy.yml) runs the tests and a type-checked build, then deploys to GitHub Pages on every push to `main` |
+
+## Running it locally
 
 ```bash
 npm install
-npm run dev     # start the app
-npm test        # 14 tests on the ranking and offer logic
-npm run build   # production build in dist/
+npm run dev     # http://localhost:5173
+npm test        # ranking and offer logic tests
+npm run build
 ```
 
-## How it is built
+## Limitations
 
-- React, TypeScript and Vite. No backend. The whole simulation runs in the browser.
-- `src/sim/` is the logic, with no interface code in it: `rank.ts` (ranking), `engine.ts` (offers, replies, escalation), `data.ts` (the simulated day).
-- Tailwind, shadcn/ui and Lucide icons. The top band uses ShaderGradient, loaded only when motion is allowed.
-- The look is written down in [DESIGN.md](DESIGN.md). Colours are generated from contrast ratios with Adobe Leonardo (`scripts/palette.mjs`).
+- All data is simulated. How often caregivers reply, how fast, and how likely they are to say yes are assumptions built into the demo.
+- No real messages are sent. No logins, no saved data, and no connection to a scheduling system.
+- Driving time is estimated from a street grid, not from a map.
+- It covers one day at one agency. Recurring visits, multi-day cover and payroll rules are out of scope.
+
+## Credits
+
+Product and prototype by Joseph Fan.
+
+<!-- TODO(Joseph): no LICENSE file. Add one if you want others to reuse the code, or note "All rights reserved." -->
