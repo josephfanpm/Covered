@@ -90,8 +90,19 @@ export interface OpenVisit {
   offers: Offer[]
   coveredBy?: string
   coveredAt?: Minutes
-  /** How it was covered: a text offer, or the scheduler assigning by hand. */
-  coveredVia?: 'offer' | 'scheduler'
+  /** How it was covered: a text offer, the scheduler assigning by hand, or moving the visit to a later time. */
+  coveredVia?: 'offer' | 'scheduler' | 'moved'
+  /** Minutes after the start time the replacement is expected to arrive. */
+  lateBy?: Minutes
+  /** The original start time, if the visit was moved. */
+  movedFrom?: Minutes
+}
+
+/** A message to the client or their family about their visit. */
+export interface ClientNotice {
+  at: Minutes
+  visitId: string
+  body: string
 }
 
 export interface TextMessage {
@@ -116,6 +127,7 @@ export interface SimState {
   world: World
   open: OpenVisit[]
   texts: TextMessage[]
+  notices: ClientNotice[]
   log: LogEntry[]
   nextTextId: number
   calloutCount: number

@@ -1,8 +1,8 @@
-import { ChevronDown, MessageSquareText, UserRoundCheck } from 'lucide-react'
+import { BellRing, CalendarClock, ChevronDown, MessageSquareText, UserRoundCheck } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { caregiverOf, clientOf, isActive, statusOf, visitOf } from '@/lib/view'
-import { calledOutToday, stageFor } from '@/sim/engine'
+import { calledOutToday, laterTimes, stageFor } from '@/sim/engine'
 import { type Candidate, rankCandidates } from '@/sim/rank'
 import type { Offer, OpenVisit, SimState } from '@/sim/types'
 import { formatClock, formatRange } from '@/sim/util'
@@ -34,6 +34,7 @@ function facts(c: Candidate, clientFirstName: string): string {
     f.priorVisits === 0 ? `New to ${clientFirstName}` : `${f.priorVisits} ${f.priorVisits === 1 ? 'visit' : 'visits'} with ${clientFirstName}`,
     `${f.travelMin} min away`,
   ]
+  if (f.lateBy > 0) parts.push(`${f.lateBy} min late`)
   if (f.overtime) parts.push('overtime')
   if (f.otherBranch) parts.push(`${c.caregiver.branch} branch`)
   return parts.join(', ')
@@ -91,12 +92,14 @@ export function VisitDetail({
   phoneId,
   onShowTexts,
   onAssign,
+  onMove,
 }: {
   sim: SimState
   open: OpenVisit
   phoneId: string | null
   onShowTexts: (caregiverId: string) => void
   onAssign: (caregiverId: string) => void
+  onMove: (caregiverId: string, start: number) => void
 }) {
   const [showAll, setShowAll] = useState(false)
   const visit = visitOf(sim, open.visitId)
@@ -108,7 +111,11 @@ export function VisitDetail({
 
   // While the visit is open, everyone is ranked as of now. The wider pool shows once the search has widened.
   const widened = stage.widened || sim.log.some((l) => l.visitId === open.visitId && l.kind === 'widened')
-  const ranked = rankCandidates(sim.world, visit, { now: sim.now, widened, calledOut: calledOutToday(sim) })
+  const canAssign = open.status === 'needs_call'
+  // Once a visit needs a phone call, arriving late is allowed and moving it becomes an option.
+  const ranked = rankCandidates(sim.world, visit, { now: sim.now, widened, calledOut: calledOutToday(sim), allowLate: canAssign })
+  const later = canAssign ? laterTimes(sim, open.visitId) : []
+  const notice = sim.notices.filter((n) => n.visitId === open.visitId).at(-1)
   const byId = new Map(ranked.map((c) => [c.caregiver.id, c]))
   const offeredIds = new Set(open.offers.map((f) => f.caregiverId))
   const upNext = active ? ranked.filter((c) => c.eligible && !offeredIds.has(c.caregiver.id)) : []
@@ -116,11 +123,11 @@ export function VisitDetail({
 
   // Keep the list short: people still in play, then the next few. Everyone who said no is one line.
   const declined = open.offers.filter((f) => f.status === 'declined')
-  const inPlay = active ? open.offers.filter((f) => f.status !== 'declined') : open.offers
+  // Once a visit is settled, only the person who took it stays on screen. Everyone else is one line.
+  const inPlay = open.offers.filter((f) => (active ? f.status !== 'declined' : f.status === 'accepted'))
+  const noReply = open.offers.filter((f) => f.status === 'expired' || f.status === 'withdrawn').length
   const shownNext = showAll ? upNext : upNext.slice(0, UP_NEXT)
   const hidden = upNext.length - shownNext.length + (showAll ? 0 : blocked.length)
-  const canAssign = open.status === 'needs_call'
-
   const needs = [client.needs.join(', '), client.language !== 'English' ? `speaks ${client.language}` : ''].filter(Boolean).join(', ')
 
   return (
@@ -141,6 +148,14 @@ export function VisitDetail({
         <StatusLine tone={status.tone} text={status.text} className="text-base" />
         {active && <span className="text-sm text-slate-600">Asking {stage.label.charAt(0).toLowerCase() + stage.label.slice(1)}</span>}
       </div>
+      {notice && (
+        <p className="mt-2 flex items-start gap-1.5 text-sm text-slate-600">
+          <BellRing className="mt-0.5 size-4 shrink-0" aria-hidden />
+          <span>
+            Client told at {formatClock(notice.at)}: {notice.body}
+          </span>
+        </p>
+      )}
 
       <ol className="mt-3 divide-y border-t" aria-label={active ? 'Who is asked, in order' : 'Who was asked'}>
         {inPlay.map((offer, i) => {
@@ -152,7 +167,7 @@ export function VisitDetail({
               candidate={candidate}
               score={offer.score}
               clientFirstName={firstName}
-              note={offerNote(offer)}
+              note={offer.status === 'accepted' && open.coveredVia !== 'offer' ? { text: 'Assigned', className: 'font-semibold text-good-600' } : offerNote(offer)}
               pending={offer.status === 'pending'}
             >
               {canAssign && candidate.eligible && <AssignButton onClick={() => onAssign(offer.caregiverId)} />}
@@ -192,6 +207,37 @@ export function VisitDetail({
         <p className="border-t py-3 text-sm text-slate-600">
           Said no: {declined.map((f) => caregiverOf(sim, f.caregiverId).name).join(', ')}
         </p>
+      )}
+      {!active && open.offers.length > 0 && (
+        <p className="border-t py-3 text-sm text-slate-600">
+          {open.offers.length} texted: {declined.length} said no, {noReply} didn't reply.
+        </p>
+      )}
+
+      {later.length > 0 && (
+        <ul className="border-t" aria-label="Move the visit to a later time">
+          {later.map((option) => {
+            const cg = caregiverOf(sim, option.caregiverId)
+            return (
+              <li key={option.caregiverId} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3">
+                <CalendarClock className="size-5 shrink-0 text-slate-500" aria-hidden />
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-ink">Move to {formatRange(option.start, option.end)}</p>
+                  <p className="text-sm text-slate-600">
+                    {cg.name}, {option.priorVisits === 0 ? `new to ${firstName}` : `${option.priorVisits} ${option.priorVisits === 1 ? 'visit' : 'visits'} with ${firstName}`}
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => onMove(option.caregiverId, option.start)}
+                  className="h-11 border-brand-500 px-3 text-sm font-semibold text-brand-700 hover:bg-brand-100 hover:text-brand-800"
+                >
+                  Move
+                </Button>
+              </li>
+            )
+          })}
+        </ul>
       )}
 
       {showAll && blocked.length > 0 && (

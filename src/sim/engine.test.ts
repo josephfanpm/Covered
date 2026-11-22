@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildWorld, DEMO_START, initialState } from './data'
-import { advance, assign, callOut, dayStats, reply, stageFor } from './engine'
-import { assess, rankCandidates } from './rank'
+import { advance, assign, callOut, dayStats, laterTimes, reply, reschedule, stageFor } from './engine'
+import { assess, lateLimit, rankCandidates } from './rank'
 import type { Caregiver, Client, OpenVisit, SimState, Visit, World } from './types'
 import { travelMinutes } from './util'
 
@@ -80,6 +80,20 @@ describe('ranking', () => {
     const w = world([cg({ id: 'tired', hoursBeforeToday: 39 }), cg({ id: 'west', branch: 'West' })])
     expect(rankCandidates(w, open, at8).filter((c) => c.eligible)).toHaveLength(0)
     expect(rankCandidates(w, open, { now: 8 * 60, widened: true }).filter((c) => c.eligible)).toHaveLength(2)
+  })
+
+  it('lets someone arrive late only when late arrivals are allowed, and only up to the limit', () => {
+    const near = world([cg({ home: { x: 13, y: 9 } })])
+    const now = 9 * 60 + 50
+    const onTimeOnly = assess(near, open, near.caregivers[0], { now, widened: true })
+    const late = assess(near, open, near.caregivers[0], { now, widened: true, allowLate: true })
+    expect(onTimeOnly.eligible).toBe(false)
+    expect(late.eligible).toBe(true)
+    expect(late.facts.lateBy).toBeGreaterThan(0)
+    expect(late.facts.lateBy).toBeLessThanOrEqual(lateLimit(open))
+
+    const far = world([cg({ home: { x: 0, y: 0 } })])
+    expect(assess(far, open, far.caregivers[0], { now: 10 * 60 + 20, widened: true, allowLate: true }).eligible).toBe(false)
   })
 
   it("rules out someone who can't arrive before the visit starts", () => {
@@ -166,6 +180,30 @@ describe('the simulated day', () => {
     const best = rankCandidates(start.world, visit, { now: start.now, widened: true, calledOut: start.open.map((o) => o.calledOutBy) }).find((c) => c.eligible)
     const s = assign(start, waiting.visitId, best!.caregiver.id)
     expect(s.open.find((o) => o.visitId === waiting.visitId)).toMatchObject({ status: 'covered', coveredVia: 'scheduler' })
+  })
+
+  it('tells the client when a visit is at risk, covered or missed', () => {
+    const end = advance(start, 20 * 60)
+    for (const o of end.open) {
+      const said = end.notices.filter((n) => n.visitId === o.visitId).map((n) => n.body)
+      if (o.status === 'covered') expect(said.some((b) => b.includes('will be with you') || b.includes('has moved'))).toBe(true)
+      if (o.status === 'missed') expect(said.at(-1)).toContain("couldn't arrange")
+    }
+    const flagged = start.open.find((o) => o.status === 'needs_call') as OpenVisit
+    expect(start.notices.some((n) => n.visitId === flagged.visitId && n.body.includes('arranging someone else'))).toBe(true)
+  })
+
+  it('can move a flagged visit to a later time with someone who is free then', () => {
+    const flagged = start.open.find((o) => o.status === 'needs_call') as OpenVisit
+    const before = start.world.visits.find((v) => v.id === flagged.visitId) as Visit
+    const option = laterTimes(start, flagged.visitId)[0]
+    expect(option.start).toBeGreaterThan(before.start)
+    const s = reschedule(start, flagged.visitId, option.caregiverId, option.start)
+    const after = s.world.visits.find((v) => v.id === flagged.visitId) as Visit
+    expect(after).toMatchObject({ start: option.start, caregiverId: option.caregiverId })
+    expect(after.end - after.start).toBe(before.end - before.start)
+    expect(s.open.find((o) => o.visitId === flagged.visitId)).toMatchObject({ status: 'covered', coveredVia: 'moved', movedFrom: before.start })
+    expect(s.notices.at(-1)?.body).toContain('has moved')
   })
 
   it('never texts an offer to someone who has called out today', () => {

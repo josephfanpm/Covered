@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { DAY_END, initialState, nextCallOutTarget } from '@/sim/data'
-import { advance, assign, callOut, reply } from '@/sim/engine'
+import { advance, assign, callOut, reply, reschedule } from '@/sim/engine'
 import type { OpenVisit, SimState } from '@/sim/types'
 
 export type Speed = 1 | 4
@@ -58,6 +58,11 @@ export function useSim() {
     [],
   )
 
+  const move = useCallback((visitId: string, caregiverId: string, start: number) => {
+    setSim((s) => reschedule(s, visitId, caregiverId, start))
+    setPhoneId(caregiverId)
+  }, [])
+
   const restart = useCallback(() => {
     const fresh = initialState()
     setSim(fresh)
@@ -81,6 +86,7 @@ export function useSim() {
     simulateCallOut,
     answer,
     assignByHand,
+    move,
     restart,
   }
 }

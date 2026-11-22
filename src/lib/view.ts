@@ -1,5 +1,5 @@
 import type { Caregiver, Client, OpenVisit, SimState, Visit } from '@/sim/types'
-import { formatWait } from '@/sim/util'
+import { formatClock, formatWait } from '@/sim/util'
 
 export const visitOf = (sim: SimState, id: string) => sim.world.visits.find((v) => v.id === id) as Visit
 export const clientOf = (sim: SimState, visit: Visit) => sim.world.clients.find((c) => c.id === visit.clientId) as Client
@@ -14,6 +14,8 @@ export function statusOf(sim: SimState, open: OpenVisit): { tone: Tone; text: st
   const pending = open.offers.filter((f) => f.status === 'pending').map((f) => caregiverOf(sim, f.caregiverId).firstName)
   if (open.status === 'covered') {
     const who = caregiverOf(sim, open.coveredBy as string).firstName
+    if (open.coveredVia === 'moved') return { tone: 'good', text: `Moved to ${formatClock(visitOf(sim, open.visitId).start)} with ${who}` }
+    if (open.lateBy) return { tone: 'good', text: `Covered by ${who}, ${open.lateBy} min late` }
     return { tone: 'good', text: `Covered by ${who} in ${formatWait((open.coveredAt as number) - open.openedAt)}` }
   }
   if (open.status === 'missed') return { tone: 'bad', text: 'Missed' }

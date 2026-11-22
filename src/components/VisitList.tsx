@@ -23,7 +23,7 @@ function Row({ sim, open, selected, onSelect }: { sim: SimState; open: OpenVisit
         <span className="flex items-baseline justify-between gap-3">
           <span className={`font-bold ${active ? 'text-ink' : 'text-slate-600'}`}>{client.name}</span>
           <span className="tabular shrink-0 text-sm text-slate-600">
-            {active ? `${formatDuration(visit.start - sim.now)} left` : formatClock(visit.start)}
+            {!active ? formatClock(visit.start) : sim.now < visit.start ? `${formatDuration(visit.start - sim.now)} left` : `${sim.now - visit.start} min late`}
           </span>
         </span>
         <StatusLine tone={status.tone} text={status.text} className="mt-1" />

@@ -5,6 +5,14 @@ import { formatTime, travelMinutes } from './util'
 export const WEIGHTS = { continuity: 40, travel: 30, hours: 15, fit: 15 } as const
 
 export const OVERTIME_HOURS = 40
+/** The latest a replacement may arrive once late arrivals are allowed. */
+export const LATE_LIMIT = 45
+
+/** How late a replacement can be for this visit: never more than 45 minutes, and always leaving at least half an hour of care. */
+export function lateLimit(visit: Visit): Minutes {
+  return Math.max(0, Math.min(LATE_LIMIT, visit.end - visit.start - 30))
+}
+
 /** Travel longer than this scores zero for the travel factor. */
 const TRAVEL_CEILING = 45
 
@@ -20,6 +28,8 @@ export interface Candidate {
     travelMin: Minutes
     /** Where they would be coming from. */
     from: string
+    /** Minutes after the start time they would arrive. Zero when on time. */
+    lateBy: Minutes
     hoursAfter: number
     overtime: boolean
     otherBranch: boolean
@@ -33,6 +43,8 @@ export interface RankOptions {
   widened: boolean
   /** Caregivers who have called out today. They aren't offered other visits the same day. */
   calledOut?: string[]
+  /** Close to the start, arriving late is better than nobody arriving. */
+  allowLate?: boolean
 }
 
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n))
@@ -72,11 +84,13 @@ export function assess(world: World, visit: Visit, caregiver: Caregiver, opts: R
     blockers.push(`Works ${formatTime(caregiver.shift.start)}–${formatTime(caregiver.shift.end)} today`)
   }
 
+  let lateBy = 0
   if (overlap) {
     blockers.push(`Has a visit at ${formatTime(overlap.start)}`)
   } else {
     const freeFrom = before ? before.end : opts.now
-    if (Math.max(freeFrom, opts.now) + travelMin > visit.start) {
+    lateBy = Math.max(0, Math.max(freeFrom, opts.now) + travelMin - visit.start)
+    if (lateBy > 0 && !(opts.allowLate && lateBy <= lateLimit(visit))) {
       blockers.push(before ? `Can't get there from their ${formatTime(before.start)} visit in time` : "Can't get there in time")
     }
     if (after && visit.end + travelMinutes(client.home, clientOf(after).home) > after.start) {
@@ -106,7 +120,8 @@ export function assess(world: World, visit: Visit, caregiver: Caregiver, opts: R
     hours: WEIGHTS.hours * clamp01((OVERTIME_HOURS - hoursAfter) / 16),
     fit: speaksLanguage ? WEIGHTS.fit : 0,
   }
-  const score = Math.round(parts.continuity + parts.travel + parts.hours + parts.fit)
+  // Every minute late costs a point, so on-time caregivers are asked first.
+  const score = Math.max(0, Math.round(parts.continuity + parts.travel + parts.hours + parts.fit - lateBy))
 
   return {
     caregiver,
@@ -114,7 +129,7 @@ export function assess(world: World, visit: Visit, caregiver: Caregiver, opts: R
     blockers,
     score,
     parts,
-    facts: { priorVisits, travelMin, from, hoursAfter, overtime, otherBranch, speaksLanguage },
+    facts: { priorVisits, travelMin, from, lateBy, hoursAfter, overtime, otherBranch, speaksLanguage },
   }
 }
 

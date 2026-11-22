@@ -1,4 +1,4 @@
-import { assess, rankCandidates } from './rank'
+import { assess, lateLimit, rankCandidates } from './rank'
 import type { Caregiver, Client, LogEntry, Minutes, Offer, OpenVisit, SimState, Visit } from './types'
 import { formatClock, formatRange, formatTime, hashUnit } from './util'
 
@@ -38,6 +38,11 @@ function text(s: SimState, caregiverId: string, visitId: string, from: 'agency' 
   s.texts.push({ id: s.nextTextId++, caregiverId, visitId, at: s.now, from, body })
 }
 
+/** Tells the client or their family what is happening with their visit. */
+function notify(s: SimState, visitId: string, body: string) {
+  s.notices.push({ at: s.now, visitId, body })
+}
+
 function log(s: SimState, visitId: string, kind: LogEntry['kind'], body: string) {
   s.log.push({ at: s.now, visitId, kind, text: body })
 }
@@ -62,7 +67,8 @@ function sendOffers(s: SimState, open: OpenVisit, stage: Stage, count: number): 
   const visit = visitOf(s, open.visitId)
   const client = clientOf(s, visit)
   const already = new Set(open.offers.map((f) => f.caregiverId))
-  const picks = rankCandidates(s.world, visit, { now: s.now, widened: stage.widened, calledOut: calledOutToday(s) })
+  const allowLate = open.status === 'needs_call'
+  const picks = rankCandidates(s.world, visit, { now: s.now, widened: stage.widened, calledOut: calledOutToday(s), allowLate })
     .filter((c) => c.eligible && !already.has(c.caregiver.id) && !hasPendingElsewhere(s, c.caregiver.id, open.visitId))
     .slice(0, count)
   if (picks.length === 0) return 0
@@ -70,7 +76,7 @@ function sendOffers(s: SimState, open: OpenVisit, stage: Stage, count: number): 
   open.wave += 1
   for (const pick of picks) {
     const cg = pick.caregiver
-    const replyBy = Math.min(s.now + stage.replyWindow, visit.start)
+    const replyBy = Math.min(s.now + stage.replyWindow, visit.start + (allowLate ? lateLimit(visit) : 0))
     const replies = hashUnit(s.seed, 'replies', open.visitId, cg.id) < cg.replyRate
     const delay = 1 + Math.floor(hashUnit(s.seed, 'delay', open.visitId, cg.id) * cg.replyMinutes * 2)
     const yes = hashUnit(s.seed, 'yes', open.visitId, cg.id) < acceptChance(pick.score)
@@ -89,22 +95,26 @@ function sendOffers(s: SimState, open: OpenVisit, stage: Stage, count: number): 
       pick.facts.priorVisits > 0
         ? ` You've seen ${client.name.split(' ')[0]} ${pick.facts.priorVisits} ${pick.facts.priorVisits === 1 ? 'time' : 'times'}.`
         : ''
+    const late = pick.facts.lateBy > 0 ? ` You'd arrive about ${pick.facts.lateBy} min late, and we'll let them know.` : ''
     text(
       s,
       cg.id,
       open.visitId,
       'agency',
-      `Hi ${cg.firstName}, can you cover a visit today with ${client.name}, ${formatRange(visit.start, visit.end)}?${known} It's ${pick.facts.travelMin} min from ${pick.facts.from}. Reply YES or NO by ${formatClock(replyBy)}.`,
+      `Hi ${cg.firstName}, can you cover a visit today with ${client.name}, ${formatRange(visit.start, visit.end)}?${known} It's ${pick.facts.travelMin} min from ${pick.facts.from}.${late} Reply YES or NO by ${formatClock(replyBy)}.`,
     )
     log(s, open.visitId, 'offer', `Offered to ${cg.name}`)
   }
   return picks.length
 }
 
-function cover(s: SimState, open: OpenVisit, caregiverId: string, via: 'offer' | 'scheduler') {
+function cover(s: SimState, open: OpenVisit, caregiverId: string, via: 'offer' | 'scheduler' | 'moved') {
   const visit = visitOf(s, open.visitId)
   const client = clientOf(s, visit)
   const cg = caregiverOf(s, caregiverId)
+  const original = caregiverOf(s, open.calledOutBy)
+  const lateBy = assess(s.world, visit, cg, { now: s.now, widened: true, allowLate: true }).facts.lateBy
+  if (lateBy > 0) open.lateBy = lateBy
   visit.caregiverId = caregiverId
   open.status = 'covered'
   open.coveredBy = caregiverId
@@ -117,7 +127,7 @@ function cover(s: SimState, open: OpenVisit, caregiverId: string, via: 'offer' |
       offer.respondedAt = s.now
     } else if (offer.status === 'pending') {
       offer.status = 'withdrawn'
-      text(s, offer.caregiverId, open.visitId, 'agency', `Thanks, the ${formatTime(visit.start)} visit is now covered.`)
+      text(s, offer.caregiverId, open.visitId, 'agency', `Thanks, the ${formatTime(open.movedFrom ?? visit.start)} visit is now covered.`)
     }
   }
   text(
@@ -125,9 +135,17 @@ function cover(s: SimState, open: OpenVisit, caregiverId: string, via: 'offer' |
     caregiverId,
     open.visitId,
     'agency',
-    `You're confirmed for ${client.name}, ${formatRange(visit.start, visit.end)}. It's on your schedule now.`,
+    `You're confirmed for ${client.name}, ${formatRange(visit.start, visit.end)}. ${lateBy > 0 ? 'Please head over now.' : "It's on your schedule now."}`,
   )
-  log(s, open.visitId, 'covered', via === 'offer' ? `Covered by ${cg.name}` : `Assigned to ${cg.name} by the scheduler`)
+  const first = client.name.split(' ')[0]
+  if (via === 'moved') {
+    notify(s, open.visitId, `Hi ${first}, your visit today has moved to ${formatRange(visit.start, visit.end)} with ${cg.firstName}.`)
+    log(s, open.visitId, 'covered', `Moved to ${formatClock(visit.start)} with ${cg.name}`)
+  } else {
+    const when = lateBy > 0 ? `around ${formatClock(visit.start + lateBy)}, a little later than planned` : `at ${formatClock(visit.start)}`
+    notify(s, open.visitId, `Hi ${first}, ${cg.firstName} will be with you today ${when}, in place of ${original.firstName}.`)
+    log(s, open.visitId, 'covered', via === 'offer' ? `Covered by ${cg.name}` : `Assigned to ${cg.name} by the scheduler`)
+  }
 
   // Their other pending offers may no longer fit around this visit.
   for (const other of s.open) {
@@ -161,10 +179,13 @@ function stepVisit(s: SimState, open: OpenVisit) {
   if (open.status === 'covered' || open.status === 'missed') return
   const visit = visitOf(s, open.visitId)
 
-  if (s.now >= visit.start) {
+  // A visit is only missed once nobody could still arrive late enough to be useful.
+  if (s.now >= visit.start + lateLimit(visit)) {
     open.status = 'missed'
     for (const offer of open.offers) if (offer.status === 'pending') offer.status = 'expired'
-    log(s, open.visitId, 'missed', 'Start time passed with nobody confirmed')
+    const client = clientOf(s, visit)
+    notify(s, open.visitId, `Hi ${client.name.split(' ')[0]}, we're sorry, we couldn't arrange your ${formatClock(visit.start)} visit today. The office will call you now.`)
+    log(s, open.visitId, 'missed', 'Nobody confirmed in time')
     return
   }
 
@@ -198,6 +219,12 @@ function stepVisit(s: SimState, open: OpenVisit) {
 
   if (open.status === 'offering' && (minutesOut <= CALL_THRESHOLD || nobodyLeft)) {
     open.status = 'needs_call'
+    const client = clientOf(s, visit)
+    notify(
+      s,
+      open.visitId,
+      `Hi ${client.name.split(' ')[0]}, ${caregiverOf(s, open.calledOutBy).firstName} can't make your ${formatClock(visit.start)} visit today. We're arranging someone else and will confirm shortly.`,
+    )
     log(s, open.visitId, 'call', nobodyLeft ? 'Nobody left to text. Phone needed.' : `Under ${CALL_THRESHOLD} minutes out. Phone needed.`)
   }
 }
@@ -255,6 +282,62 @@ export function assign(state: SimState, visitId: string, caregiverId: string): S
   const open = s.open.find((o) => o.visitId === visitId)
   if (!open || open.status === 'covered' || open.status === 'missed') return state
   cover(s, open, caregiverId, 'scheduler')
+  return s
+}
+
+/** The latest a visit can be moved to on the same day. */
+const LAST_END: Minutes = 20 * 60
+
+export interface LaterOption {
+  caregiverId: string
+  start: Minutes
+  end: Minutes
+  priorVisits: number
+}
+
+/**
+ * Later times today when someone could take the visit, one per caregiver, earliest first.
+ * Caregivers the client already knows come ahead of strangers.
+ */
+export function laterTimes(s: SimState, visitId: string, limit = 2): LaterOption[] {
+  const visit = visitOf(s, visitId)
+  const length = visit.end - visit.start
+  const calledOut = calledOutToday(s)
+  const firstSlot = Math.ceil((Math.max(visit.start, s.now) + 60) / 30) * 30
+  const options: LaterOption[] = []
+  for (const cg of s.world.caregivers) {
+    for (let start = firstSlot; start + length <= LAST_END; start += 30) {
+      const moved = { ...visit, start, end: start + length }
+      const c = assess(s.world, moved, cg, { now: s.now, widened: true, calledOut })
+      if (c.eligible) {
+        options.push({ caregiverId: cg.id, start, end: start + length, priorVisits: c.facts.priorVisits })
+        break
+      }
+    }
+  }
+  return options
+    .sort(
+      (a, b) =>
+        Number(b.priorVisits > 0) - Number(a.priorVisits > 0) ||
+        a.start - b.start ||
+        b.priorVisits - a.priorVisits ||
+        a.caregiverId.localeCompare(b.caregiverId),
+    )
+    .slice(0, limit)
+}
+
+/** Moves the visit to a later time today with a caregiver who is free then. The scheduler agrees it with the client by phone first. */
+export function reschedule(state: SimState, visitId: string, caregiverId: string, start: Minutes): SimState {
+  const s = clone(state)
+  const open = s.open.find((o) => o.visitId === visitId)
+  if (!open || open.status === 'covered' || open.status === 'missed') return state
+  const visit = visitOf(s, visitId)
+  const moved = { ...visit, start, end: start + (visit.end - visit.start) }
+  if (!assess(s.world, moved, caregiverOf(s, caregiverId), { now: s.now, widened: true, calledOut: calledOutToday(s) }).eligible) return state
+  open.movedFrom = visit.start
+  visit.start = moved.start
+  visit.end = moved.end
+  cover(s, open, caregiverId, 'moved')
   return s
 }
 

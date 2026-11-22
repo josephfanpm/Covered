@@ -179,6 +179,7 @@ export function initialState(seed = SEED): SimState {
     world: buildWorld(seed),
     open: [],
     texts: [],
+    notices: [],
     log: [],
     nextTextId: 1,
     calloutCount: 0,

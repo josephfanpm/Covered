@@ -38,6 +38,7 @@ export default function App() {
               phoneId={phoneCaregiver}
               onShowTexts={sim.setPhoneId}
               onAssign={(caregiverId) => sim.assignByHand(open.visitId, caregiverId)}
+              onMove={(caregiverId, start) => sim.move(open.visitId, caregiverId, start)}
             />
           ) : (
             <p className="rounded-2xl border border-dashed border-slate-300 p-8 text-slate-600">Pick a visit to see who can take it.</p>
